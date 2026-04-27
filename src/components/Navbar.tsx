@@ -22,9 +22,16 @@ import {
   MoreVertical
 } from 'lucide-react';
 
+import { useSession, signOut } from 'next-auth/react';
+
 const Navbar = () => {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+  const userName = session?.user?.name || "Dr. Jose Simmons";
+  const userImage = session?.user?.image || "/dr-jose-simmons.png";
+  const userEmail = session?.user?.email || "General Practitioner";
 
   return (
     <nav className="h-[60px] lg:h-[72px] bg-white/80 backdrop-blur-2xl border-b border-[#EDEDED] fixed top-0 left-0 right-0 z-50 transition-all duration-500 shadow-sm px-4">
@@ -76,8 +83,8 @@ const Navbar = () => {
             <div className="flex items-center group cursor-pointer lg:mr-2 xl:mr-5 p-0.5 rounded-xl hover:bg-gray-50 transition-colors">
               <div className="relative w-7 h-7 lg:w-9 lg:h-9 lg:mr-2 flex-shrink-0">
                 <Image 
-                  src="/dr-jose-simmons.png" 
-                  alt="Dr. Jose Simmons" 
+                  src={userImage} 
+                  alt={userName} 
                   fill
                   sizes="(max-width: 768px) 28px, 36px"
                   priority
@@ -87,15 +94,17 @@ const Navbar = () => {
               </div>
               <div className="hidden min-[1300px]:flex flex-col">
                 <div className="flex items-center space-x-1">
-                  <span className="text-[11px] xl:text-xs font-black text-[#072635] leading-tight whitespace-nowrap">Dr. Jose Simmons</span>
+                  <span className="text-[11px] xl:text-xs font-black text-[#072635] leading-tight whitespace-nowrap">{userName}</span>
                   <ChevronDown size={10} className="text-[#707070]" />
                 </div>
-                <span className="text-[8px] xl:text-[9px] text-[#707070] font-bold uppercase tracking-wider">General Practitioner</span>
+                <span className="text-[8px] xl:text-[9px] text-[#707070] font-bold uppercase tracking-wider truncate max-w-[120px]">
+                  {session?.user?.email ? "Authenticated Provider" : userEmail}
+                </span>
               </div>
             </div>
             
             <button 
-              onClick={() => window.location.href = '/api/auth/signout'}
+              onClick={() => signOut({ callbackUrl: '/login' })}
               className="p-1.5 lg:p-2 bg-red-50 text-red-600 rounded-lg lg:rounded-xl hover:bg-red-600 hover:text-white transition-all flex-shrink-0"
               title="Logout"
             >
