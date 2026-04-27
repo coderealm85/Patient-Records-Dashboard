@@ -224,6 +224,31 @@ export default function LoginPage() {
                   )}
                 </button>
               </form>
+
+              {/* Social Login Separator */}
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#F6F7F8]"></div>
+                </div>
+                <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+                  <span className="bg-white px-4 text-gray-400">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Google Login Button */}
+              <button
+                type="button"
+                onClick={() => signIn("google", { callbackUrl: "/" })}
+                className="w-full py-4 bg-white border-2 border-[#F6F7F8] text-[#072635] font-bold rounded-2xl hover:bg-[#F6F7F8] hover:border-gray-200 transition-all flex items-center justify-center space-x-3"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M23.766 12.2764C23.766 11.4607 23.6999 10.6406 23.5588 9.83807H12.24V14.4591H18.7217C18.4528 15.9194 17.5885 17.2025 16.344 18.0182V21.0182H20.1803C22.433 18.9273 23.766 15.8921 23.766 12.2764Z" fill="#4285F4"/>
+                  <path d="M12.24 24.0008C15.4765 24.0008 18.2059 22.9382 20.1845 21.0182L16.3482 18.0182C15.2817 18.7444 13.8841 19.1398 12.2442 19.1398C9.11746 19.1398 6.47194 17.0316 5.51897 14.1953H1.54541V17.2718C3.51897 21.2182 7.58434 24.0008 12.24 24.0008Z" fill="#34A853"/>
+                  <path d="M5.51474 14.1953C5.00002 12.6591 5.00002 10.9816 5.51474 9.44534V6.36884H1.54541C-0.158371 9.82711 -0.158371 13.8136 1.54541 17.2718L5.51474 14.1953Z" fill="#FBBC04"/>
+                  <path d="M12.24 4.85966C13.9514 4.83238 15.602 5.48238 16.8327 6.67151L20.2604 3.24382C18.0874 1.19655 15.2158 -0.0145805 12.24 -5.53428e-05C7.58434 -5.53428e-05 3.51897 2.78267 1.54541 6.72911L5.51897 9.80561C6.46771 6.96925 9.11322 4.85966 12.24 4.85966Z" fill="#EA4335"/>
+                </svg>
+                <span>Continue with Google</span>
+              </button>
             </motion.div>
           </AnimatePresence>
 
