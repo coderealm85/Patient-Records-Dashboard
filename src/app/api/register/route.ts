@@ -4,10 +4,10 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { email, password, firstName, lastName, specialty } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Missing email or password" }, { status: 400 });
+    if (!email || !password || !firstName || !lastName) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -24,10 +24,14 @@ export async function POST(req: Request) {
       data: {
         email,
         password: hashedPassword,
+        firstName,
+        lastName,
+        name: `${firstName} ${lastName}`,
+        specialty: specialty || "General Practitioner"
       },
     });
 
-    return NextResponse.json({ success: true, user: { email: user.email } });
+    return NextResponse.json({ success: true, user: { email: user.email, name: user.name } });
   } catch (error) {
     console.error("Registration Error:", error);
     return NextResponse.json({ error: "Failed to create account" }, { status: 500 });

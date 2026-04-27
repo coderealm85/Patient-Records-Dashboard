@@ -29,14 +29,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user.password
         );
 
-        if (!isPasswordCorrect) return null;
-
-        return { id: user.id, email: user.email };
+        return { 
+          id: user.id, 
+          email: user.email, 
+          name: user.name, 
+          specialty: user.specialty 
+        };
       },
     }),
   ],
   pages: {
     signIn: "/login",
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        const u = user as any;
+        token.specialty = u.specialty;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).specialty = token.specialty;
+      }
+      return session;
+    },
   },
   session: {
     strategy: "jwt",

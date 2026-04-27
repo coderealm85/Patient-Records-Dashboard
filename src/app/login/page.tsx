@@ -11,6 +11,9 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [specialty, setSpecialty] = useState("General Practitioner");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -45,7 +48,7 @@ export default function LoginPage() {
         const res = await fetch("/api/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, firstName, lastName, specialty }),
         });
 
         const data = await res.json();
@@ -112,7 +115,7 @@ export default function LoginPage() {
         </div>
 
         {/* Right Side: Form */}
-        <div className="p-8 lg:p-16 flex flex-col justify-center bg-white">
+        <div className="p-8 lg:p-16 flex flex-col justify-center bg-white overflow-y-auto max-h-[95vh] custom-scrollbar">
           <div className="mb-10 text-center lg:text-left">
             <div className="lg:hidden flex justify-center mb-8">
               <Image src="/TestLogo.png" alt="Logo" width={160} height={32} />
@@ -155,7 +158,7 @@ export default function LoginPage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <form onSubmit={handleAuth} className="space-y-6">
+              <form onSubmit={handleAuth} className="space-y-4 lg:space-y-6">
                 {error && (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -174,6 +177,43 @@ export default function LoginPage() {
                   >
                     {success}
                   </motion.div>
+                )}
+
+                {!isLogin && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-[#072635] uppercase tracking-widest ml-1">First Name</label>
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full px-4 py-4 bg-[#F6F7F8] border-none rounded-2xl focus:ring-2 focus:ring-[#01F0D0] outline-none transition-all font-semibold text-[#072635]"
+                        placeholder="John"
+                        required={!isLogin}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-[#072635] uppercase tracking-widest ml-1">Last Name</label>
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full px-4 py-4 bg-[#F6F7F8] border-none rounded-2xl focus:ring-2 focus:ring-[#01F0D0] outline-none transition-all font-semibold text-[#072635]"
+                        placeholder="Doe"
+                        required={!isLogin}
+                      />
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                      <label className="text-xs font-black text-[#072635] uppercase tracking-widest ml-1">Specialty</label>
+                      <input
+                        type="text"
+                        value={specialty}
+                        onChange={(e) => setSpecialty(e.target.value)}
+                        className="w-full px-4 py-4 bg-[#F6F7F8] border-none rounded-2xl focus:ring-2 focus:ring-[#01F0D0] outline-none transition-all font-semibold text-[#072635]"
+                        placeholder="e.g. Cardiologist"
+                      />
+                    </div>
+                  </div>
                 )}
 
                 <div className="space-y-2">
@@ -224,6 +264,7 @@ export default function LoginPage() {
                   )}
                 </button>
               </form>
+
 
               {/* Social Login Separator */}
               <div className="relative my-8">

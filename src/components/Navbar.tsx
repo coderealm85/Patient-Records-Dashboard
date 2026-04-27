@@ -98,7 +98,7 @@ const Navbar = () => {
                   <ChevronDown size={10} className="text-[#707070]" />
                 </div>
                 <span className="text-[8px] xl:text-[9px] text-[#707070] font-bold uppercase tracking-wider truncate max-w-[120px]">
-                  {session?.user?.email ? "Authenticated Provider" : userEmail}
+                  {(session?.user as any)?.specialty || "General Practitioner"}
                 </span>
               </div>
             </div>
