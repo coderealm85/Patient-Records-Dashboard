@@ -8,6 +8,7 @@ export async function GET() {
 
   try {
     const transactions = await prisma.transaction.findMany({
+      where: { userId: (session.user as any)?.id },
       orderBy: { createdAt: 'desc' }
     });
     return NextResponse.json(transactions);

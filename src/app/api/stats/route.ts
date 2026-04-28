@@ -7,10 +7,11 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
+    const userId = (session.user as any)?.id;
     const [patientCount, appointmentCount, latestTransactions] = await Promise.all([
-      prisma.patient.count(),
-      prisma.appointment.count(),
-      prisma.transaction.findMany({ take: 5, orderBy: { createdAt: 'desc' } })
+      prisma.patient.count({ where: { userId } }),
+      prisma.appointment.count({ where: { userId } }),
+      prisma.transaction.findMany({ where: { userId }, take: 5, orderBy: { createdAt: 'desc' } })
     ]);
 
     return NextResponse.json({

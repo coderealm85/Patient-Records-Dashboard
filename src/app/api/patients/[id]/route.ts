@@ -12,6 +12,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   console.log(`PATCH /api/patients/${id} - Data received:`, JSON.stringify(data, null, 2));
 
   try {
+    const userId = (session.user as any)?.id;
+    const existingPatient = await prisma.patient.findFirst({ where: { id, userId } });
+    if (!existingPatient) return NextResponse.json({ error: "Not found or unauthorized" }, { status: 404 });
+
     const updatePayload: any = {};
     
     if (data.name !== undefined) updatePayload.name = data.name;
@@ -104,8 +108,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
   try {
     // Verify patient exists before trying to delete
-    const patient = await prisma.patient.findUnique({
-      where: { id },
+    const userId = (session.user as any)?.id;
+    const patient = await prisma.patient.findFirst({
+      where: { id, userId },
       include: {
         diagnosisHistory: true,
         diagnosticList: true,
