@@ -43,6 +43,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isOnLogin = nextUrl.pathname.startsWith('/login');
+      const isOnRegister = nextUrl.pathname.startsWith('/register');
+      
+      if (isOnLogin || isOnRegister) {
+        if (isLoggedIn) return Response.redirect(new URL('/', nextUrl));
+        return true;
+      }
+
+      return isLoggedIn; // Redirects to signIn page if false
+    },
     async jwt({ token, user }) {
       if (user) {
         const u = user as any;
@@ -53,6 +65,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
+        (session.user as any).id = token.sub;
         (session.user as any).gender = token.gender;
         (session.user as any).dateOfBirth = token.dateOfBirth;
       }

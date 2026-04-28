@@ -8,6 +8,7 @@ export async function GET() {
 
   try {
     const messages = await prisma.message.findMany({
+      where: { userId: (session.user as any)?.id },
       orderBy: { createdAt: 'asc' }
     });
     return NextResponse.json(messages);
@@ -28,7 +29,8 @@ export async function POST(req: Request) {
         receiver,
         sender: "Dr. Jose Simmons",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isMe: true
+        isMe: true,
+        userId: (session.user as any)?.id
       }
     });
     return NextResponse.json(message);

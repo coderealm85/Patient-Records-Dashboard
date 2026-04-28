@@ -8,15 +8,20 @@ datasource db {
 }
 
 model User {
-  id        String  @id @default(cuid())
-  email     String  @unique
-  password  String?
-  name      String?
+  id          String  @id @default(cuid())
+  email       String  @unique
+  password    String?
+  name        String?
   image       String?
   firstName   String?
   lastName    String?
   gender      String?
   dateOfBirth String?
+
+  patients      Patient[]
+  transactions  Transaction[]
+  messages      Message[]
+  appointments  Appointment[]
 }
 
 model Patient {
@@ -29,6 +34,8 @@ model Patient {
   phoneNumber       String
   emergencyContact  String
   insuranceType     String
+  userId            String?
+  user              User?              @relation(fields: [userId], references: [id])
   diagnosisHistory  DiagnosisHistory[]
   diagnosticList    DiagnosticItem[]
   labResults        LabResult[]
@@ -79,6 +86,8 @@ model Transaction {
   amount    String
   status    String
   method    String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }
 
@@ -89,6 +98,8 @@ model Message {
   content   String
   time      String
   isMe      Boolean
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }
 
@@ -99,5 +110,7 @@ model Appointment {
   date      String
   time      String
   status    String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }
