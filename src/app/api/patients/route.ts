@@ -44,7 +44,12 @@ export async function GET() {
   try {
     console.log("GET /api/patients - Fetching patients...");
     const patients = await prisma.patient.findMany({
-      where: { userId: (session.user as any)?.id },
+      where: {
+        OR: [
+          { userId: (session.user as any)?.id },
+          { userId: null }
+        ]
+      },
       include: {
         diagnosisHistory: true,
         diagnosticList: true,

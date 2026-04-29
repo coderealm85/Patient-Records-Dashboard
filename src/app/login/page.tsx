@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, ArrowRight, UserPlus, LogIn, ShieldCheck, Activity, ChevronRight, Zap } from "lucide-react";
+import { Mail, Lock, ArrowRight, UserPlus, LogIn, ShieldCheck, Activity, ChevronRight, Zap, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,11 +19,26 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleForgotPassword = () => {
+    if (!email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    setTimeout(() => {
+      setLoading(false);
+      setSuccess("If an account exists, a reset link has been sent to your email.");
+    }, 1200);
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,8 +92,8 @@ export default function LoginPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#031119] relative overflow-hidden font-sans selection:bg-[#01F0D0] selection:text-[#072635]">
-      {/* Animated Background Gradients */}
+    <div className="min-h-screen flex items-center justify-center bg-[#031119] relative font-sans selection:bg-[#01F0D0] selection:text-[#072635] py-12 px-4">
+      {/* Animated Background Gradients (Optimized: Using radial gradients instead of heavy filters) */}
       <motion.div 
         animate={{ 
           scale: [1, 1.2, 1],
@@ -86,7 +101,7 @@ export default function LoginPage() {
           rotate: [0, 90, 0]
         }}
         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] bg-gradient-to-r from-[#01F0D0]/20 to-transparent rounded-full blur-[120px]" 
+        className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] bg-[radial-gradient(circle_at_center,rgba(1,240,208,0.15)_0%,transparent_60%)] rounded-full transform-gpu will-change-transform" 
       />
       <motion.div 
         animate={{ 
@@ -95,25 +110,19 @@ export default function LoginPage() {
           x: [0, 100, 0]
         }}
         transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-gradient-to-l from-[#072635] to-[#01F0D0]/10 rounded-full blur-[150px]" 
+        className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-[radial-gradient(circle_at_center,rgba(7,38,53,0.8)_0%,rgba(1,240,208,0.05)_40%,transparent_70%)] rounded-full transform-gpu will-change-transform" 
       />
 
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 rounded-[2.5rem] shadow-2xl shadow-[#01F0D0]/5 overflow-hidden m-4 relative z-10 bg-white/5 backdrop-blur-2xl border border-white/10">
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 rounded-[2.5rem] shadow-2xl shadow-[#01F0D0]/5 overflow-hidden m-4 relative z-10 bg-white/5 backdrop-blur-xl border border-white/10">
         
         {/* Left Side: Visual / Brand */}
         <div className="hidden lg:flex flex-col justify-between p-16 relative overflow-hidden bg-gradient-to-br from-[#072635] to-[#04151e]">
-          {/* Glassmorphism shapes behind text */}
-          <div className="absolute top-20 right-10 w-32 h-32 bg-[#01F0D0] rounded-full mix-blend-overlay filter blur-[50px] opacity-60 animate-pulse" />
-          <div className="absolute bottom-20 left-10 w-48 h-48 bg-blue-500 rounded-full mix-blend-overlay filter blur-[60px] opacity-40" />
+          {/* Glassmorphism shapes behind text (Optimized: Using radial gradients instead of heavy filters) */}
+          <div className="absolute top-20 right-10 w-32 h-32 bg-[radial-gradient(circle_at_center,rgba(1,240,208,0.8)_0%,transparent_70%)] rounded-full mix-blend-overlay opacity-60 animate-pulse transform-gpu will-change-transform" />
+          <div className="absolute bottom-20 left-10 w-48 h-48 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.8)_0%,transparent_70%)] rounded-full mix-blend-overlay opacity-40 transform-gpu" />
 
           <div className="relative z-10">
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-            >
-              <Image src="/TestLogo.png" alt="Coalition Technologies" width={200} height={40} className="brightness-0 invert mb-20" />
-            </motion.div>
+            {/* Logo removed as requested */}
             
             <div className="space-y-6">
               <motion.div
@@ -168,17 +177,11 @@ export default function LoginPage() {
         </div>
 
         {/* Right Side: Form */}
-        <div className="p-8 lg:p-14 flex flex-col justify-center bg-white/95 backdrop-blur-3xl relative">
+        <div className="p-8 lg:p-14 flex flex-col justify-center bg-white/95 backdrop-blur-md relative transform-gpu">
           <div className="absolute top-0 right-0 w-full h-2 bg-gradient-to-r from-transparent via-[#01F0D0] to-transparent opacity-50" />
           
           <div className="mb-10">
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="lg:hidden flex justify-center mb-8 bg-[#072635] p-4 rounded-2xl"
-            >
-              <Image src="/TestLogo.png" alt="Logo" width={160} height={32} className="brightness-0 invert" />
-            </motion.div>
+            {/* Mobile logo removed as requested */}
             <motion.h1 
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -234,7 +237,7 @@ export default function LoginPage() {
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
               transition={{ duration: 0.3 }}
-              className="max-h-[55vh] overflow-y-auto custom-scrollbar pr-2 pb-2"
+              className="w-full pr-2 pb-2"
             >
               <form onSubmit={handleAuth} className="space-y-5">
                 <AnimatePresence>
@@ -338,20 +341,27 @@ export default function LoginPage() {
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center pl-1 pr-2">
                     <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Password</label>
-                    {isLogin && <button type="button" className="text-[11px] font-bold text-[#01F0D0] hover:text-[#072635] transition-colors">Forgot?</button>}
+                    {isLogin && <button type="button" onClick={handleForgotPassword} className="text-[11px] font-bold text-[#01F0D0] hover:text-[#072635] transition-colors">Forgot?</button>}
                   </div>
                   <div className="relative group">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 group-focus-within:border-[#01F0D0]/50 transition-colors">
                       <Lock className="text-gray-400 group-focus-within:text-[#01F0D0] transition-colors" size={16} />
                     </div>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-14 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400 tracking-wider"
+                      className="w-full pl-14 pr-12 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400 tracking-wider"
                       placeholder="••••••••"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#072635] transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
 

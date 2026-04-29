@@ -13,6 +13,23 @@
   --background-end-rgb: 246, 246, 246;
 }
 
+/* Lenis Recommended CSS */
+html.lenis, html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
 body {
   @apply text-[#072635] bg-[#F6F6F6] font-[Manrope] overflow-x-hidden;
 }
@@ -23,6 +40,11 @@ body {
 
 .glass-effect {
   @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
+}
+
+.custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .custom-scrollbar::-webkit-scrollbar {

@@ -33,6 +33,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id, 
           email: user.email, 
           name: user.name, 
+          image: user.image,
           gender: user.gender,
           dateOfBirth: user.dateOfBirth
         };
@@ -55,11 +56,53 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return isLoggedIn; // Redirects to signIn page if false
     },
-    async jwt({ token, user }) {
+    async signIn({ user, account }) {
+      if (account?.provider === 'google' && user.email) {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email }
+          });
+          if (existingUser) {
+            await prisma.user.update({
+              where: { email: user.email },
+              data: {
+                image: user.image || existingUser.image,
+                name: user.name || existingUser.name,
+              }
+            });
+          } else {
+            await prisma.user.create({
+              data: {
+                email: user.email,
+                name: user.name || "",
+                image: user.image,
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Error saving google user:", e);
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, account }) {
       if (user) {
-        const u = user as any;
-        token.gender = u.gender;
-        token.dateOfBirth = u.dateOfBirth;
+        if (account?.provider === 'google') {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: user.email as string }
+          });
+          if (dbUser) {
+            token.sub = dbUser.id;
+            token.gender = dbUser.gender;
+            token.dateOfBirth = dbUser.dateOfBirth;
+            if (dbUser.image) token.picture = dbUser.image;
+          }
+        } else {
+          const u = user as any;
+          token.gender = u.gender;
+          token.dateOfBirth = u.dateOfBirth;
+          if (user.image) token.picture = user.image;
+        }
       }
       return token;
     },
@@ -68,6 +111,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (session.user as any).id = token.sub;
         (session.user as any).gender = token.gender;
         (session.user as any).dateOfBirth = token.dateOfBirth;
+        if (token.picture) session.user.image = token.picture;
       }
       return session;
     },
