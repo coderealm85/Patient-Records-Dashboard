@@ -14,12 +14,14 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
+import AddTransactionModal from '@/components/AddTransactionModal';
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  React.useEffect(() => {
+  const fetchTransactions = () => {
     fetch('/api/transactions')
       .then(res => res.ok ? res.json() : [])
       .then(data => {
@@ -31,7 +33,30 @@ export default function TransactionsPage() {
         setTransactions([]);
         setLoading(false);
       });
+  };
+
+  React.useEffect(() => {
+    fetchTransactions();
   }, []);
+
+  const handleAddTransaction = async (data: any) => {
+    try {
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        setIsModalOpen(false);
+        fetchTransactions();
+      } else {
+        const err = await res.json();
+        alert('Failed: ' + (err.error || 'Unknown error'));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F6F6F6] pt-[100px] lg:pt-[110px] pb-10 px-4 md:px-8">
@@ -52,7 +77,10 @@ export default function TransactionsPage() {
               <Download size={18} />
               <span>Export</span>
             </button>
-            <button className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-[#01F0D0] rounded-full text-xs lg:text-sm font-extrabold text-[#072635] shadow-sm hover:shadow-[#01F0D0]/40 transition-all">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-[#01F0D0] rounded-full text-xs lg:text-sm font-extrabold text-[#072635] shadow-sm hover:shadow-[#01F0D0]/40 transition-all"
+            >
               <CreditCard size={18} />
               <span>New Invoice</span>
             </button>
@@ -138,6 +166,12 @@ export default function TransactionsPage() {
           </div>
         </div>
       </div>
+
+      <AddTransactionModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onAdd={handleAddTransaction} 
+      />
     </div>
   );
 }

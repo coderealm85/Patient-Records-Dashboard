@@ -13,12 +13,14 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import AddAppointmentModal from '@/components/AddAppointmentModal';
 
 export default function SchedulePage() {
   const [appointments, setAppointments] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  React.useEffect(() => {
+  const fetchAppointments = () => {
     fetch('/api/appointments')
       .then(res => res.ok ? res.json() : [])
       .then(data => {
@@ -30,7 +32,30 @@ export default function SchedulePage() {
         setAppointments([]);
         setLoading(false);
       });
+  };
+
+  React.useEffect(() => {
+    fetchAppointments();
   }, []);
+
+  const handleAddAppointment = async (data: any) => {
+    try {
+      const res = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        setIsModalOpen(false);
+        fetchAppointments();
+      } else {
+        const err = await res.json();
+        alert('Failed: ' + (err.error || 'Unknown error'));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const days = [
     { day: 'Mon', date: '21', active: false },
@@ -68,7 +93,10 @@ export default function SchedulePage() {
                   <ChevronRight size={20} />
                 </button>
               </div>
-              <button className="flex items-center space-x-2 bg-[#01F0D0] px-4 lg:px-6 py-2.5 rounded-full text-xs lg:text-sm font-extrabold text-[#072635] shadow-sm hover:shadow-[#01F0D0]/40 transition-all">
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center space-x-2 bg-[#01F0D0] px-4 lg:px-6 py-2.5 rounded-full text-xs lg:text-sm font-extrabold text-[#072635] shadow-sm hover:shadow-[#01F0D0]/40 transition-all"
+              >
                 <Plus size={18} strokeWidth={3} />
                 <span className="hidden xs:inline">New Appointment</span>
                 <span className="xs:hidden">New</span>
@@ -182,6 +210,12 @@ export default function SchedulePage() {
           </div>
         </div>
       </div>
+
+      <AddAppointmentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAdd={handleAddAppointment}
+      />
     </div>
   );
 }

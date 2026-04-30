@@ -28,6 +28,19 @@ const Navbar = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
+  const notificationsRef = React.useRef<HTMLDivElement>(null);
+
+  // Close notifications on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const userName = session?.user?.name || "Dr. Jose Simmons";
   const gender = (session?.user as any)?.gender || "Male";
@@ -83,7 +96,46 @@ const Navbar = () => {
         <div className="flex-1 flex items-center justify-end space-x-1 lg:space-x-2 xl:space-x-4 min-w-0">
           <div className="flex items-center space-x-0.5 lg:space-x-1">
             <IconButton icon={<Search size={16} />} />
-            <IconButton icon={<Bell size={16} />} badge />
+            <div className="relative" ref={notificationsRef}>
+              <IconButton 
+                icon={<Bell size={16} />} 
+                badge 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} 
+              />
+              <AnimatePresence>
+                {isNotificationsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full right-0 mt-2 w-[320px] bg-white rounded-2xl shadow-xl border border-[#EDEDED] z-50 overflow-hidden origin-top-right"
+                  >
+                    <div className="p-4 border-b border-[#EDEDED] flex items-center justify-between">
+                      <h3 className="text-sm font-extrabold text-[#072635]">Notifications</h3>
+                      <button className="text-[10px] text-[#01F0D0] font-bold uppercase hover:underline">Mark all read</button>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                      {[
+                        { title: 'New Appointment', desc: 'Ryan Johnson requested an appointment for tomorrow.', time: '10 min ago', unread: true },
+                        { title: 'Lab Results Ready', desc: 'Blood test results for Emily Williams are available.', time: '1 hour ago', unread: true },
+                        { title: 'Message Received', desc: 'Jessica Taylor sent you a message.', time: 'Yesterday', unread: false }
+                      ].map((n, i) => (
+                        <div key={i} className={`p-4 border-b border-[#F6F7F8] hover:bg-gray-50 transition-colors cursor-pointer ${n.unread ? 'bg-[#F4F0FE]/30' : ''}`}>
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="text-xs font-bold text-[#072635]">{n.title}</span>
+                            <span className="text-[9px] text-[#707070] font-bold">{n.time}</span>
+                          </div>
+                          <p className="text-[11px] text-[#707070]">{n.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="p-3 text-center border-t border-[#EDEDED] bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                      <span className="text-xs font-bold text-[#072635]">View All Notifications</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <Link href="/settings">
               <IconButton icon={<Settings size={16} />} className="hidden sm:block" />
             </Link>
@@ -186,8 +238,8 @@ const NavLink = ({ href, icon, label, active = false, onClick }: { href: string,
   </Link>
 );
 
-const IconButton = ({ icon, className = "", badge = false }: { icon: React.ReactNode, className?: string, badge?: boolean }) => (
-  <button className={`p-2 lg:p-2.5 hover:bg-gray-100 rounded-lg lg:rounded-xl transition-all text-[#072635] relative group active:scale-90 ${className}`}>
+const IconButton = ({ icon, className = "", badge = false, onClick }: { icon: React.ReactNode, className?: string, badge?: boolean, onClick?: () => void }) => (
+  <button onClick={onClick} className={`p-2 lg:p-2.5 hover:bg-gray-100 rounded-lg lg:rounded-xl transition-all text-[#072635] relative group active:scale-90 ${className}`}>
     <span className="group-hover:scale-110 transition-transform block">{icon}</span>
     {badge && (
       <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white shadow-sm"></span>
