@@ -5,16 +5,22 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, ArrowRight, UserPlus, LogIn, ShieldCheck, Activity, ChevronRight, Zap, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, ArrowRight, UserPlus, LogIn, ShieldCheck, Activity, ChevronRight, Zap, Eye, EyeOff, Key } from "lucide-react";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [step, setStep] = useState<"form" | "otp" | "forgot" | "reset">("form");
+  const [otpType, setOtpType] = useState<"signup" | "forgot">("signup");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState("Male");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -26,20 +32,6 @@ export default function LoginPage() {
     setMounted(true);
   }, []);
 
-  const handleForgotPassword = () => {
-    if (!email) {
-      setError("Please enter your email address first.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess("If an account exists, a reset link has been sent to your email.");
-    }, 1200);
-  };
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -47,39 +39,96 @@ export default function LoginPage() {
     setSuccess("");
 
     try {
-      if (isLogin) {
-        const result = await signIn("credentials", {
-          email,
-          password,
-          redirect: false,
-        });
+      if (step === "form") {
+        if (isLogin) {
+          const result = await signIn("credentials", {
+            email,
+            password,
+            redirect: false,
+          });
 
-        if (result?.error) {
-          setError("Invalid email or password. Please try again.");
+          if (result?.error) {
+            setError("Invalid email or password. Please try again.");
+          } else {
+            setSuccess("Authentication successful. Redirecting...");
+            setTimeout(() => {
+              router.push("/");
+              router.refresh();
+            }, 800);
+          }
         } else {
-          setSuccess("Authentication successful. Redirecting...");
-          setTimeout(() => {
-            router.push("/");
-            router.refresh();
-          }, 800);
+          const res = await fetch("/api/auth/send-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, type: "signup" }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setSuccess("OTP sent to your email!");
+            setOtpType("signup");
+            setStep("otp");
+          } else {
+            setError(data.error || "Failed to send OTP.");
+          }
         }
-      } else {
-        const res = await fetch("/api/register", {
+      } else if (step === "forgot") {
+        const res = await fetch("/api/auth/send-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, firstName, lastName, gender, dateOfBirth }),
+          body: JSON.stringify({ email, type: "forgot" }),
         });
-
         const data = await res.json();
         if (res.ok) {
-          setSuccess("Account created! Please log in.");
+          setSuccess("OTP sent to your email!");
+          setOtpType("forgot");
+          setStep("otp");
+        } else {
+          setError(data.error || "Failed to send OTP.");
+        }
+      } else if (step === "otp") {
+        if (otpType === "signup") {
+          const res = await fetch("/api/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, firstName, lastName, gender, dateOfBirth, otp }),
+          });
+
+          const data = await res.json();
+          if (res.ok) {
+            setSuccess("Account created! Please log in.");
+            setTimeout(() => {
+              setIsLogin(true);
+              setStep("form");
+              setSuccess("");
+              setPassword("");
+              setOtp("");
+            }, 1500);
+          } else {
+            setError(data.error || "Failed to create account.");
+          }
+        } else if (otpType === "forgot") {
+          setStep("reset");
+          setSuccess("Please enter your new password.");
+        }
+      } else if (step === "reset") {
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp, newPassword }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setSuccess("Password reset successfully! Please log in.");
           setTimeout(() => {
             setIsLogin(true);
+            setStep("form");
             setSuccess("");
             setPassword("");
+            setNewPassword("");
+            setOtp("");
           }, 1500);
         } else {
-          setError(data.error || "Failed to create account.");
+          setError(data.error || "Failed to reset password.");
         }
       }
     } catch (err) {
@@ -93,7 +142,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#031119] relative font-sans selection:bg-[#01F0D0] selection:text-[#072635] py-12 px-4">
-      {/* Animated Background Gradients (Optimized: Using radial gradients instead of heavy filters) */}
       <motion.div 
         animate={{ 
           scale: [1, 1.2, 1],
@@ -115,15 +163,11 @@ export default function LoginPage() {
 
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 rounded-[2.5rem] shadow-2xl shadow-[#01F0D0]/5 overflow-hidden m-4 relative z-10 bg-white/5 backdrop-blur-xl border border-white/10">
         
-        {/* Left Side: Visual / Brand */}
         <div className="hidden lg:flex flex-col justify-between p-16 relative overflow-hidden bg-gradient-to-br from-[#072635] to-[#04151e]">
-          {/* Glassmorphism shapes behind text (Optimized: Using radial gradients instead of heavy filters) */}
           <div className="absolute top-20 right-10 w-32 h-32 bg-[radial-gradient(circle_at_center,rgba(1,240,208,0.8)_0%,transparent_70%)] rounded-full mix-blend-overlay opacity-60 animate-pulse transform-gpu will-change-transform" />
           <div className="absolute bottom-20 left-10 w-48 h-48 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.8)_0%,transparent_70%)] rounded-full mix-blend-overlay opacity-40 transform-gpu" />
 
           <div className="relative z-10">
-            {/* Logo removed as requested */}
-            
             <div className="space-y-6">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -176,63 +220,72 @@ export default function LoginPage() {
           </motion.div>
         </div>
 
-        {/* Right Side: Form */}
         <div className="p-8 lg:p-14 flex flex-col justify-center bg-white/95 backdrop-blur-md relative transform-gpu">
           <div className="absolute top-0 right-0 w-full h-2 bg-gradient-to-r from-transparent via-[#01F0D0] to-transparent opacity-50" />
           
-          <div className="mb-10">
-            {/* Mobile logo removed as requested */}
-            <motion.h1 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-3xl lg:text-4xl font-black text-[#072635] mb-3 tracking-tight"
-            >
-              {isLogin ? "Welcome Back" : "Create Account"}
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-gray-500 font-medium"
-            >
-              {isLogin ? "Securely login to your portal" : "Join our network of professionals"}
-            </motion.p>
+          <div className="mb-10 flex items-start justify-between">
+            <div>
+              <motion.h1 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-3xl lg:text-4xl font-black text-[#072635] mb-3 tracking-tight"
+              >
+                {step === "otp" ? "Verify OTP" : step === "forgot" ? "Reset Password" : step === "reset" ? "New Password" : isLogin ? "Welcome Back" : "Create Account"}
+              </motion.h1>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="text-gray-500 font-medium"
+              >
+                {step === "otp" ? "Enter the 6-digit code sent to your email" : step === "forgot" ? "Enter your email to receive an OTP" : step === "reset" ? "Secure your account with a new password" : isLogin ? "Securely login to your portal" : "Join our network of professionals"}
+              </motion.p>
+            </div>
+            {step !== "form" && (
+              <button 
+                onClick={() => { setStep("form"); setError(""); setSuccess(""); }}
+                className="text-sm font-bold text-gray-400 hover:text-[#072635] transition-colors"
+              >
+                Back to Login
+              </button>
+            )}
           </div>
 
-          {/* Toggle Tabs */}
-          <div className="flex p-1.5 bg-gray-100/80 backdrop-blur-sm rounded-2xl mb-8 relative">
-            <motion.div
-              className="absolute inset-y-1.5 bg-white rounded-xl shadow-sm border border-gray-200/50"
-              initial={false}
-              animate={{
-                left: isLogin ? "0.375rem" : "50%",
-                width: "calc(50% - 0.375rem)"
-              }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-            <button
-              onClick={() => setIsLogin(true)}
-              className={`flex-1 py-3 text-sm font-bold rounded-xl transition-colors relative z-10 flex items-center justify-center space-x-2 ${
-                isLogin ? "text-[#072635]" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <LogIn size={18} />
-              <span>Login</span>
-            </button>
-            <button
-              onClick={() => setIsLogin(false)}
-              className={`flex-1 py-3 text-sm font-bold rounded-xl transition-colors relative z-10 flex items-center justify-center space-x-2 ${
-                !isLogin ? "text-[#072635]" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <UserPlus size={18} />
-              <span>Signup</span>
-            </button>
-          </div>
+          {step === "form" && (
+            <div className="flex p-1.5 bg-gray-100/80 backdrop-blur-sm rounded-2xl mb-8 relative">
+              <motion.div
+                className="absolute inset-y-1.5 bg-white rounded-xl shadow-sm border border-gray-200/50"
+                initial={false}
+                animate={{
+                  left: isLogin ? "0.375rem" : "50%",
+                  width: "calc(50% - 0.375rem)"
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+              <button
+                onClick={() => { setIsLogin(true); setError(""); setSuccess(""); }}
+                className={`flex-1 py-3 text-sm font-bold rounded-xl transition-colors relative z-10 flex items-center justify-center space-x-2 ${
+                  isLogin ? "text-[#072635]" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <LogIn size={18} />
+                <span>Login</span>
+              </button>
+              <button
+                onClick={() => { setIsLogin(false); setError(""); setSuccess(""); }}
+                className={`flex-1 py-3 text-sm font-bold rounded-xl transition-colors relative z-10 flex items-center justify-center space-x-2 ${
+                  !isLogin ? "text-[#072635]" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <UserPlus size={18} />
+                <span>Signup</span>
+              </button>
+            </div>
+          )}
 
           <AnimatePresence mode="wait">
             <motion.div
-              key={isLogin ? "login" : "signup"}
+              key={step + (isLogin ? "login" : "signup")}
               initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
@@ -265,7 +318,7 @@ export default function LoginPage() {
                   )}
                 </AnimatePresence>
 
-                {!isLogin && (
+                {step === "form" && !isLogin && (
                   <motion.div 
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
                     className="grid grid-cols-2 gap-4"
@@ -278,7 +331,7 @@ export default function LoginPage() {
                         onChange={(e) => setFirstName(e.target.value)}
                         className="w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400"
                         placeholder="John"
-                        required={!isLogin}
+                        required
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -289,7 +342,7 @@ export default function LoginPage() {
                         onChange={(e) => setLastName(e.target.value)}
                         className="w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400"
                         placeholder="Doe"
-                        required={!isLogin}
+                        required
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -299,7 +352,7 @@ export default function LoginPage() {
                           value={gender}
                           onChange={(e) => setGender(e.target.value)}
                           className="w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] appearance-none"
-                          required={!isLogin}
+                          required
                         >
                           <option value="Male">Male</option>
                           <option value="Female">Female</option>
@@ -315,55 +368,105 @@ export default function LoginPage() {
                         value={dateOfBirth}
                         onChange={(e) => setDateOfBirth(e.target.value)}
                         className="w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] text-sm"
-                        required={!isLogin}
+                        required
                       />
                     </div>
                   </motion.div>
                 )}
 
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest pl-1">Email Address</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 group-focus-within:border-[#01F0D0]/50 transition-colors">
-                      <Mail className="text-gray-400 group-focus-within:text-[#01F0D0] transition-colors" size={16} />
+                {(step === "form" || step === "forgot") && (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest pl-1">Email Address</label>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 group-focus-within:border-[#01F0D0]/50 transition-colors">
+                        <Mail className="text-gray-400 group-focus-within:text-[#01F0D0] transition-colors" size={16} />
+                      </div>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-14 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400"
+                        placeholder="name@example.com"
+                        required
+                      />
                     </div>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-14 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400"
-                      placeholder="name@example.com"
-                      required
-                    />
                   </div>
-                </div>
+                )}
 
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center pl-1 pr-2">
-                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Password</label>
-                    {isLogin && <button type="button" onClick={handleForgotPassword} className="text-[11px] font-bold text-[#01F0D0] hover:text-[#072635] transition-colors">Forgot?</button>}
-                  </div>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 group-focus-within:border-[#01F0D0]/50 transition-colors">
-                      <Lock className="text-gray-400 group-focus-within:text-[#01F0D0] transition-colors" size={16} />
+                {step === "form" && (
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center pl-1 pr-2">
+                      <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Password</label>
+                      {isLogin && <button type="button" onClick={() => { setStep("forgot"); setError(""); setSuccess(""); }} className="text-[11px] font-bold text-[#01F0D0] hover:text-[#072635] transition-colors">Forgot?</button>}
                     </div>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-14 pr-12 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400 tracking-wider"
-                      placeholder="••••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#072635] transition-colors"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 group-focus-within:border-[#01F0D0]/50 transition-colors">
+                        <Lock className="text-gray-400 group-focus-within:text-[#01F0D0] transition-colors" size={16} />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-14 pr-12 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400 tracking-wider"
+                        placeholder="••••••••"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#072635] transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {step === "otp" && (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest pl-1">One Time Password</label>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 group-focus-within:border-[#01F0D0]/50 transition-colors">
+                        <Key className="text-gray-400 group-focus-within:text-[#01F0D0] transition-colors" size={16} />
+                      </div>
+                      <input
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        className="w-full pl-14 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400 tracking-[0.5em] text-center"
+                        placeholder="123456"
+                        maxLength={6}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {step === "reset" && (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest pl-1">New Password</label>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 group-focus-within:border-[#01F0D0]/50 transition-colors">
+                        <Lock className="text-gray-400 group-focus-within:text-[#01F0D0] transition-colors" size={16} />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full pl-14 pr-12 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#01F0D0]/50 focus:border-[#01F0D0] outline-none transition-all font-semibold text-[#072635] placeholder:text-gray-400 tracking-wider"
+                        placeholder="••••••••"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#072635] transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <motion.button
                   whileHover={{ scale: 1.01 }}
@@ -377,35 +480,45 @@ export default function LoginPage() {
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
-                      <span>{isLogin ? "Access Dashboard" : "Complete Setup"}</span>
+                      <span>
+                        {step === "otp" ? "Verify OTP" 
+                        : step === "forgot" ? "Send OTP" 
+                        : step === "reset" ? "Reset Password" 
+                        : isLogin ? "Access Dashboard" 
+                        : "Complete Setup"}
+                      </span>
                       <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
                 </motion.button>
               </form>
 
-              <div className="relative my-8 flex items-center justify-center">
-                <div className="absolute w-full border-t border-gray-200"></div>
-                <span className="relative bg-white px-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  Or continue with
-                </span>
-              </div>
+              {step === "form" && (
+                <>
+                  <div className="relative my-8 flex items-center justify-center">
+                    <div className="absolute w-full border-t border-gray-200"></div>
+                    <span className="relative bg-white px-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      Or continue with
+                    </span>
+                  </div>
 
-              <motion.button
-                whileHover={{ scale: 1.01, backgroundColor: "#f9fafb" }}
-                whileTap={{ scale: 0.98 }}
-                type="button"
-                onClick={() => signIn("google", { callbackUrl: "/" })}
-                className="w-full py-4 bg-white border border-gray-200 text-[#072635] font-bold rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center space-x-3"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M23.766 12.2764C23.766 11.4607 23.6999 10.6406 23.5588 9.83807H12.24V14.4591H18.7217C18.4528 15.9194 17.5885 17.2025 16.344 18.0182V21.0182H20.1803C22.433 18.9273 23.766 15.8921 23.766 12.2764Z" fill="#4285F4"/>
-                  <path d="M12.24 24.0008C15.4765 24.0008 18.2059 22.9382 20.1845 21.0182L16.3482 18.0182C15.2817 18.7444 13.8841 19.1398 12.2442 19.1398C9.11746 19.1398 6.47194 17.0316 5.51897 14.1953H1.54541V17.2718C3.51897 21.2182 7.58434 24.0008 12.24 24.0008Z" fill="#34A853"/>
-                  <path d="M5.51474 14.1953C5.00002 12.6591 5.00002 10.9816 5.51474 9.44534V6.36884H1.54541C-0.158371 9.82711 -0.158371 13.8136 1.54541 17.2718L5.51474 14.1953Z" fill="#FBBC04"/>
-                  <path d="M12.24 4.85966C13.9514 4.83238 15.602 5.48238 16.8327 6.67151L20.2604 3.24382C18.0874 1.19655 15.2158 -0.0145805 12.24 -5.53428e-05C7.58434 -5.53428e-05 3.51897 2.78267 1.54541 6.72911L5.51897 9.80561C6.46771 6.96925 9.11322 4.85966 12.24 4.85966Z" fill="#EA4335"/>
-                </svg>
-                <span>Continue with Google</span>
-              </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.01, backgroundColor: "#f9fafb" }}
+                    whileTap={{ scale: 0.98 }}
+                    type="button"
+                    onClick={() => signIn("google", { callbackUrl: "/" })}
+                    className="w-full py-4 bg-white border border-gray-200 text-[#072635] font-bold rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center space-x-3"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M23.766 12.2764C23.766 11.4607 23.6999 10.6406 23.5588 9.83807H12.24V14.4591H18.7217C18.4528 15.9194 17.5885 17.2025 16.344 18.0182V21.0182H20.1803C22.433 18.9273 23.766 15.8921 23.766 12.2764Z" fill="#4285F4"/>
+                      <path d="M12.24 24.0008C15.4765 24.0008 18.2059 22.9382 20.1845 21.0182L16.3482 18.0182C15.2817 18.7444 13.8841 19.1398 12.2442 19.1398C9.11746 19.1398 6.47194 17.0316 5.51897 14.1953H1.54541V17.2718C3.51897 21.2182 7.58434 24.0008 12.24 24.0008Z" fill="#34A853"/>
+                      <path d="M5.51474 14.1953C5.00002 12.6591 5.00002 10.9816 5.51474 9.44534V6.36884H1.54541C-0.158371 9.82711 -0.158371 13.8136 1.54541 17.2718L5.51474 14.1953Z" fill="#FBBC04"/>
+                      <path d="M12.24 4.85966C13.9514 4.83238 15.602 5.48238 16.8327 6.67151L20.2604 3.24382C18.0874 1.19655 15.2158 -0.0145805 12.24 -5.53428e-05C7.58434 -5.53428e-05 3.51897 2.78267 1.54541 6.72911L5.51897 9.80561C6.46771 6.96925 9.11322 4.85966 12.24 4.85966Z" fill="#EA4335"/>
+                    </svg>
+                    <span>Continue with Google</span>
+                  </motion.button>
+                </>
+              )}
             </motion.div>
           </AnimatePresence>
 

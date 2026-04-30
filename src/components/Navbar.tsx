@@ -30,9 +30,15 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const userName = session?.user?.name || "Dr. Jose Simmons";
-  const userImage = session?.user?.image || "/dr-jose-simmons.png";
-  
   const gender = (session?.user as any)?.gender || "Male";
+  
+  // Use gender specific default avatars if no user image
+  const defaultImage = gender.toLowerCase() === "female" 
+    ? `https://avatar.iran.liara.run/public/girl?username=${encodeURIComponent(userName)}`
+    : `https://avatar.iran.liara.run/public/boy?username=${encodeURIComponent(userName)}`;
+    
+  const userImage = session?.user?.image || defaultImage;
+  
   const dob = (session?.user as any)?.dateOfBirth;
   const age = dob ? new Date().getFullYear() - new Date(dob).getFullYear() : 35;
 
@@ -78,7 +84,9 @@ const Navbar = () => {
           <div className="flex items-center space-x-0.5 lg:space-x-1">
             <IconButton icon={<Search size={16} />} />
             <IconButton icon={<Bell size={16} />} badge />
-            <IconButton icon={<Settings size={16} />} className="hidden sm:block" />
+            <Link href="/settings">
+              <IconButton icon={<Settings size={16} />} className="hidden sm:block" />
+            </Link>
           </div>
 
           {/* Profile */}
@@ -141,10 +149,10 @@ const Navbar = () => {
               <NavLink href="/transactions" icon={<CreditCard size={20} />} label="Transactions" active={pathname === '/transactions'} onClick={() => setIsMobileMenuOpen(false)} />
               
               <div className="pt-4 mt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
-                <button className="flex items-center justify-center space-x-2 p-3 bg-gray-50 rounded-2xl text-sm font-bold text-[#072635]">
+                <Link href="/settings" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center space-x-2 p-3 bg-gray-50 rounded-2xl text-sm font-bold text-[#072635]">
                   <Settings size={18} />
                   <span>Settings</span>
-                </button>
+                </Link>
                 <button className="flex items-center justify-center space-x-2 p-3 bg-gray-50 rounded-2xl text-sm font-bold text-[#072635]">
                   <HelpCircle size={18} />
                   <span>Support</span>

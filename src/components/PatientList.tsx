@@ -12,7 +12,8 @@ interface Patient {
   name: string;
   gender: string;
   age: number;
-  profilePicture: string;
+  profilePicture?: string;
+  profile_picture?: string;
 }
 
 const PatientList = ({ onSelectPatient, selectedPatientId, onOpenAddModal }: { 
@@ -116,14 +117,7 @@ const PatientList = ({ onSelectPatient, selectedPatientId, onOpenAddModal }: {
       const res = await fetch('/api/patients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...payload,
-          profilePicture: '/default-patient.png',
-          dateOfBirth: 'January 1, 1996',
-          phoneNumber: '(555) 012-3456',
-          emergencyContact: '(555) 987-6543',
-          insuranceType: 'Standard Health',
-        }),
+        body: JSON.stringify(payload),
       });
       if (res.status === 401) {
         window.location.href = '/login';
@@ -231,7 +225,7 @@ const PatientList = ({ onSelectPatient, selectedPatientId, onOpenAddModal }: {
                 <div className="flex items-center space-x-4">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm ring-2 ring-transparent group-hover:ring-[#01F0D0]/20 transition-all">
                     <Image
-                      src={patient.profilePicture || '/default-patient.png'}
+                      src={patient.profile_picture || patient.profilePicture || '/default-patient.png'}
                       alt={patient.name}
                       fill
                       sizes="48px"

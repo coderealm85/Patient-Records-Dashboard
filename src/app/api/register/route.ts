@@ -4,10 +4,22 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, firstName, lastName, gender, dateOfBirth } = await req.json();
+    const { email, password, firstName, lastName, gender, dateOfBirth, otp } = await req.json();
 
-    if (!email || !password || !firstName || !lastName || !gender || !dateOfBirth) {
+    if (!email || !password || !firstName || !lastName || !gender || !dateOfBirth || !otp) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const verificationToken = await prisma.verificationToken.findFirst({
+      where: { identifier: email, token: otp },
+    });
+
+    if (!verificationToken) {
+      return NextResponse.json({ error: "Invalid OTP" }, { status: 400 });
+    }
+
+    if (verificationToken.expires < new Date()) {
+      return NextResponse.json({ error: "OTP expired" }, { status: 400 });
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -30,6 +42,15 @@ export async function POST(req: Request) {
         gender,
         dateOfBirth
       },
+    });
+
+    await prisma.verificationToken.delete({
+      where: {
+        identifier_token: {
+          identifier: email,
+          token: otp
+        }
+      }
     });
 
     return NextResponse.json({ success: true, user: { email: user.email, name: user.name } });
